@@ -1,18 +1,25 @@
 ### Importing libraries
-from gpiozero import Motor, DigitalInputDevice
+from gpiozero import Motor, Robot, DigitalInputDevice
 from time import sleep
 
 ### Defining constants
 # Pins
 in1 = 17 
 in2 = 27
+in3 = 23
+in4 = 24
+
 ena = 18
+enb = 25
+
 enc_a = 26
+enc_b = 16
 
 # Constants
 spd_a = 1.0
-fs = 1
+spd_b = 1.0
 
+fs = 0.5
 
 # Defining the Encoder object
 class Encoder(object):
@@ -31,13 +38,17 @@ class Encoder(object):
     def value(self):
         return self._value
 
-# Creating the Motor and Encoder objects
-motor = Motor(forward=in1, backward=in2, enable=ena)
+### Creating the Robot and Encoder objects
+# Robot object
+bot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
+bot.value = (spd_a, spd_b)  # Setting motor speeds
+
+# Encoder objects
 enc1 = Encoder(enc_a)
+enc2 = Encoder(enc_b)
 
-
-# Forever looping - 
+# Forever looping 
 while 1:
-    motor.forward(spd_a)
-    print("enc1 {}".format(enc1._value))
+    bot.forward()
+    print("enc1 {} enc2 {}".format(enc1._value, enc2._value))
     sleep(fs)
