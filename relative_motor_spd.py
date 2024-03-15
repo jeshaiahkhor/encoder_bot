@@ -20,11 +20,11 @@ spd_a = 0.75
 spd_b = 0.75
 target = 40     # Target no. of ticks per fs duration
 
-kp = 0.002
-kd = 0.001
-ki = 0.0005
+kp = 0.005
+kd = 0
+ki = 0
 
-fs = 0.5
+fs = 0.1
 
 # Defining the Encoder object
 class Encoder(object):
@@ -55,25 +55,25 @@ enc2 = Encoder(enc_b)
 # Forever looping 
 count = 0
 
-prev_e1_error = 0
-prev_e2_error = 0
-
-sum_e1_error = 0
-sum_e2_error = 0
+prev_err = 0
+sum_err = 0
 
 while 1:
-    #bot.forward()
-    print(target*count)
-    # Calculating motor error
-    e1_error = target*count - enc1._value
-    e2_error = target*count - enc2._value
-    print(e1_error)
+    # Calculating motor error - motor 1 is the reference, motor 2 will (try) to match it
+    err = enc1._value - enc2._value
+    print(err)
+
+
     # Finding the new motor speed (adjustment = error x kp, new_speed = old_speed + adjustment)
-    spd_a += (e1_error*kp) + (prev_e1_error*kd) + (sum_e1_error*ki)
-    spd_b += (e2_error*kp) + (prev_e2_error*kd) + (sum_e2_error*ki)
+    p_comp = err*kp
+    d_comp = prev_err*kd
+    i_comp = sum_err*ki
+    adj = p_comp + d_comp + i_comp
+    spd_b += adj
+    
+    print("p {} d {} i {} total {}".format(p_comp, d_comp, i_comp, adj))
 
     # Setting min and max values to 0 and 1 in case that is exceeded
-    spd_a = max(min(1, spd_a), 0)
     spd_b = max(min(1, spd_b), 0)
 
     # Updating robot speed
@@ -84,8 +84,5 @@ while 1:
     sleep(fs)
 
     count += 1
-    prev_e1_error = e1_error
-    prev_e2_error = e2_error
-
-    sum_e1_error += e1_error
-    sum_e2_error += e2_error
+    prev_err = err
+    sum_err += err
