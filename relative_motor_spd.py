@@ -1,3 +1,5 @@
+##### Tests PID control for straight-line motion #####
+
 ### Importing libraries
 from gpiozero import Motor, Robot, DigitalInputDevice
 from time import sleep
@@ -16,15 +18,17 @@ enc_a = 26
 enc_b = 16
 
 # Constants
-spd_a = 0.75
-spd_b = 0.75
+ori_spd_a = 0.75
+ori_spd_b = 0.75
 target = 40     # Target no. of ticks per fs duration
 
-kp = 0.005
+kp = 0.05
 kd = 0
 ki = 0
 
-fs = 0.1
+allowance = 2
+
+fs = 0.5
 
 # Defining the Encoder object
 class Encoder(object):
@@ -46,7 +50,10 @@ class Encoder(object):
 ### Creating the Robot and Encoder objects
 # Robot object
 bot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
-bot.value = (spd_a, spd_b)  # Setting motor speeds
+bot.value = (ori_spd_a, ori_spd_b)  # Setting motor speeds
+
+spd_a = ori_spd_a
+spd_b = ori_spd_b
 
 # Encoder objects
 enc1 = Encoder(enc_a)
@@ -61,28 +68,32 @@ sum_err = 0
 while 1:
     # Calculating motor error - motor 1 is the reference, motor 2 will (try) to match it
     err = enc1._value - enc2._value
-    print(err)
+    print(f'error: {err}')
 
+    # Adding an allowance for error?
+    if abs(err) > allowance:
+        # Finding the new motor speed (adjustment = error x kp, new_speed = old_speed + adjustment)
+        p_comp = err*kp
+        d_comp = prev_err*kd
+        i_comp = sum_err*ki
+        adj = p_comp + d_comp + i_comp
+        spd_b += adj
+        
+        print("p {} d {} i {} total {}".format(p_comp, d_comp, i_comp, adj))
 
-    # Finding the new motor speed (adjustment = error x kp, new_speed = old_speed + adjustment)
-    p_comp = err*kp
-    d_comp = prev_err*kd
-    i_comp = sum_err*ki
-    adj = p_comp + d_comp + i_comp
-    spd_b += adj
-    
-    print("p {} d {} i {} total {}".format(p_comp, d_comp, i_comp, adj))
+        # Setting min and max values to 0 and 1 in case that is exceeded
+        spd_b = max(min(1, spd_b), 0)
 
-    # Setting min and max values to 0 and 1 in case that is exceeded
-    spd_b = max(min(1, spd_b), 0)
+        # Updating robot speed
+        bot.value = (spd_a, spd_b)
 
-    # Updating robot speed
-    bot.value = (spd_a, spd_b)
+        # Printing output of motor speeds
+        print("enc1 {} enc2 {} m1 {} m2 {}".format(enc1._value, enc2._value, spd_a, spd_b))
+        sleep(fs)
 
-    # Printing output of motor speeds
-    print("enc1 {} enc2 {} m1 {} m2 {}".format(enc1._value, enc2._value, spd_a, spd_b))
-    sleep(fs)
-
-    count += 1
-    prev_err = err
-    sum_err += err
+        count += 1
+        prev_err = err
+        sum_err += err
+    elif abs(prev_err) > allowance and abs(err) < allowance:
+        bot.value = (ori_spd_a, ori_spd_b)
+        print(f'HARD FIX - speeds adjusted; prev err: {prev_err}, err: {err}')
