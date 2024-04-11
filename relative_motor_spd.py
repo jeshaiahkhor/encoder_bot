@@ -22,8 +22,8 @@ ori_spd_a = 0.75
 ori_spd_b = 0.75
 target = 40     # Target no. of ticks per fs duration
 
-kp = 0.05
-kd = 0
+kp = 0.005
+kd = 0.001
 ki = 0
 
 allowance = 2
@@ -97,3 +97,4 @@ while 1:
     elif abs(prev_err) > allowance and abs(err) < allowance:
         bot.value = (ori_spd_a, ori_spd_b)
         print(f'HARD FIX - speeds adjusted; prev err: {prev_err}, err: {err}')
+        prev_err = err
