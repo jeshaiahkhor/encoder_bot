@@ -18,8 +18,7 @@ enc_a = 26
 enc_b = 16
 
 # Constants
-ori_spd_a = 0.75
-ori_spd_b = 0.75
+original_speed = 0.75
 target = 40     # Target no. of ticks per fs duration
 
 kp = 0.005
@@ -46,6 +45,45 @@ class Encoder(object):
     @property
     def value(self):
         return self._value
+
+# Defining the turning function
+def turn(robot, direction, left_encoder, right_encoder, default_speed=0.75):
+    # Setting no. of encoder ticks required (trial & error)
+    turn_limit = 28
+    
+    # Resets the current count of both encoders
+    left_encoder.reset()
+    right_encoder.reset()
+
+    # Sets the initial speeds of the robot
+    left_speed = default_speed 
+    right_speed = default_speed
+
+    # Handling right turns
+    if direction == 'right':
+        # Sets the right motor speed to 0 (allows right turn)
+        right_speed = 0
+        robot.value = (left_speed, right_speed)
+
+        # Allowing to run while turn angle not reached
+        while left_encoder._value - right_encoder._value < turn_limit:
+            #print(f'enc1: {enc1._value}, enc2: {enc2._value}\n')
+            sleep(0.01)
+    elif direction == 'left':
+        # Sets the left motor speed to 0 (allows left turn)
+        left_speed = 0
+        robot.value = (left_speed, right_speed)
+
+        # Allowing to run while turn angle not reached
+        while right_encoder._value - left_encoder._value < turn_limit:
+            sleep(0.01)
+
+    # Sets to 0 speed to await next step
+    robot.value = (0,0)
+
+def straight(robot, left_encoder, right_encoder, speed=0.75, time):
+    # Defining parameters
+    kp = 
 
 ### Creating the Robot and Encoder objects
 # Robot object
