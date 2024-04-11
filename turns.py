@@ -50,7 +50,7 @@ class Encoder(object):
 ### Creating the Robot and Encoder objects
 # Robot object
 bot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
-bot.value = (ori_spd_a, ori_spd_b)  # Setting motor speeds
+#bot.value = (ori_spd_a, ori_spd_b)  # Setting motor speeds
 
 spd_a = ori_spd_a
 spd_b = ori_spd_b
@@ -59,27 +59,50 @@ spd_b = ori_spd_b
 enc1 = Encoder(enc_a)
 enc2 = Encoder(enc_b)
 
-# Defining the right-turn function
-def turn(robot, direction):
-    enc1.reset()
-    enc2.reset()
-    spd_a = ori_spd_a 
-    spd_b = ori_spd_b
+# Defining the right-turn function (assumes stop before turn)
+def turn(robot, direction, left_encoder, right_encoder, default_speed=0.75):
+    # Setting no. of encoder ticks required (trial & error)
+    turn_limit = 28
     
+    # Resets the current count of both encoders
+    left_encoder.reset()
+    right_encoder.reset()
+
+    # Sets the initial speeds of the robot
+    left_speed = default_speed 
+    right_speed = default_speed
+
+    # Handling right turns
     if direction == 'right':
-        spd_b = 0
-        robot.value = (spd_a, spd_b)
-        while enc1._value - enc2._value < 28:
-            print(f'enc1: {enc1._value}, enc2: {enc2._value}\n')
+        # Sets the right motor speed to 0 (allows right turn)
+        right_speed = 0
+        robot.value = (left_speed, right_speed)
+
+        # Allowing to run while turn angle not reached
+        while left_encoder._value - right_encoder._value < turn_limit:
+            #print(f'enc1: {enc1._value}, enc2: {enc2._value}\n')
+            sleep(0.01)
+    elif direction == 'left':
+        # Sets the left motor speed to 0 (allows left turn)
+        left_speed = 0
+        robot.value = (left_speed, right_speed)
+
+        # Allowing to run while turn angle not reached
+        while right_encoder._value - left_encoder._value < turn_limit:
             sleep(0.01)
 
+    # Sets to 0 speed to await next step
     robot.value = (0,0)
-    #spd_a = ori_spd_a
-    #spd_b = ori_spd_b
 
-    #bot.value(spd_a, spd_b)
+print('Starting program...')
+sleep(1)
 
 for i in range(1, 9):
-    turn(bot, 'right')
-    print(f'turn no. {i}')
+    turn(bot, 'right', enc1, enc2)
+    print(f'right turn no. {i}')
+    sleep(1)
+
+for i in range(1, 9):
+    turn(bot, 'left', enc1, enc2)
+    print(f'left turn no. {i}')
     sleep(1)
