@@ -1,20 +1,21 @@
+##### Basic code to test robot wiring and the gpiozero library function. #####
 # Importing libraries
 from gpiozero import Robot, Motor
 from time import sleep
 
 # Defining pins
 # Motor 1
-in3 = 17
-in4 = 27
-enb = 18
+in1 = 17
+in2 = 27
+ena = 18
 
 # Motor 2
-in1 = 23
-in2 = 24
-ena = 25
+in3 = 23
+in4 = 24
+enb = 25
 
 # Defining robot instance
-robot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
+robot = Robot(right=Motor(forward=in1, backward=in2, enable=ena), left=Motor(forward=in3, backward=in4, enable=enb))
 
 # Testing all basic robot movements
 while 1:
