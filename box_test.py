@@ -52,7 +52,7 @@ enc1 = Encoder(enc_a)
 enc2 = Encoder(enc_b)
 
 
-def straight(robot, left_encoder, right_encoder, speed=0.5, runtime=1, kp=0.01, kd=0.005, ki=0, allowance=2, fs=0.1):
+def straight(robot, left_encoder, right_encoder, speed=0.5, runtime=1, kp=0.005, kd=0.001, ki=0, allowance=2, fs=0.1):
     # Setting initial counter values    
     count = 0
     prev_err = 0
