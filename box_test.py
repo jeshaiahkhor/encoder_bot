@@ -44,7 +44,7 @@ class Encoder(object):
 
 ### Creating the Robot and Encoder objects
 # Robot object
-bot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
+bot = Robot(right=Motor(forward=in1, backward=in2, enable=ena), left=Motor(forward=in3, backward=in4, enable=enb))
 
 
 # Encoder objects
@@ -109,9 +109,9 @@ def straight(robot, left_encoder, right_encoder, speed=0.5, runtime=1, kp=0.01, 
 
 
 # Defining turning function
-def turn(robot, direction, left_encoder, right_encoder, default_speed=0.5):
+def turn(robot, direction, left_encoder, right_encoder, default_speed=0.35):
     # Setting no. of encoder ticks required (trial & error)
-    turn_limit = 29
+    turn_limit = 35
     
     # Resets the current count of both encoders
     left_encoder.reset()
@@ -130,7 +130,7 @@ def turn(robot, direction, left_encoder, right_encoder, default_speed=0.5):
         # Allowing to run while turn angle not reached
         while left_encoder._value - right_encoder._value < turn_limit:
             # print(f'enc1: {enc1._value}, enc2: {enc2._value}\n')
-            sleep(0.01)
+            sleep(0.005)
     elif direction == 'left':
         # Sets the left motor speed to 0 (allows left turn)
         left_speed = 0
@@ -138,7 +138,7 @@ def turn(robot, direction, left_encoder, right_encoder, default_speed=0.5):
 
         # Allowing to run while turn angle not reached
         while right_encoder._value - left_encoder._value < turn_limit:
-            sleep(0.01)
+            sleep(0.005)
 
     # Sets to 0 speed to await next step
     robot.value = (0,0)
@@ -149,7 +149,7 @@ def turn(robot, direction, left_encoder, right_encoder, default_speed=0.5):
     right_encoder.reset()
 
 # Starting main program\
-input()
+input('Start: ')
 print('Testing straight line function...')
 sleep(1)
 

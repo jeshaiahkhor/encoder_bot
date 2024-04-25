@@ -44,7 +44,7 @@ class Encoder(object):
 
 ### Creating the Robot and Encoder objects
 # Robot object
-bot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
+bot = Robot(right=Motor(forward=in1, backward=in2, enable=ena), left=Motor(forward=in3, backward=in4, enable=enb))
 
 
 # Encoder objects
@@ -104,7 +104,7 @@ def straight(robot, left_encoder, right_encoder, speed=0.75, runtime=1, kp=0.005
     right_encoder.reset()
 
 print('Testing straight line function...')
-straight(bot, enc1, enc2, speed=0.5)
-straight(bot, enc1, enc2, speed=0.75)
-straight(bot, enc1, enc2, speed=1.0)
+#straight(bot, enc1, enc2, speed=0.5)
+straight(bot, enc1, enc2, speed=0.75, runtime=3)
+#straight(bot, enc1, enc2, speed=1.0)
 print(f'enc1: {enc1._value}, enc2: {enc2._value}')

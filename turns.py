@@ -49,7 +49,7 @@ class Encoder(object):
 
 ### Creating the Robot and Encoder objects
 # Robot object
-bot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
+bot = Robot(right=Motor(forward=in1, backward=in2, enable=ena), left=Motor(forward=in3, backward=in4, enable=enb))
 #bot.value = (ori_spd_a, ori_spd_b)  # Setting motor speeds
 
 spd_a = ori_spd_a
@@ -60,9 +60,9 @@ enc1 = Encoder(enc_a)
 enc2 = Encoder(enc_b)
 
 # Defining the right-turn function (assumes stop before turn)
-def turn(robot, direction, left_encoder, right_encoder, default_speed=0.75):
+def turn(robot, direction, left_encoder, right_encoder, default_speed=0.35):
     # Setting no. of encoder ticks required (trial & error)
-    turn_limit = 28
+    turn_limit = 35
     
     # Resets the current count of both encoders
     left_encoder.reset()
@@ -77,11 +77,12 @@ def turn(robot, direction, left_encoder, right_encoder, default_speed=0.75):
         # Sets the right motor speed to 0 (allows right turn)
         right_speed = 0
         robot.value = (left_speed, right_speed)
+        #robot.right(default_speed)
 
         # Allowing to run while turn angle not reached
         while left_encoder._value - right_encoder._value < turn_limit:
             #print(f'enc1: {enc1._value}, enc2: {enc2._value}\n')
-            sleep(0.01)
+            sleep(0.005)
     elif direction == 'left':
         # Sets the left motor speed to 0 (allows left turn)
         left_speed = 0
@@ -89,20 +90,35 @@ def turn(robot, direction, left_encoder, right_encoder, default_speed=0.75):
 
         # Allowing to run while turn angle not reached
         while right_encoder._value - left_encoder._value < turn_limit:
-            sleep(0.01)
+            sleep(0.005)
 
     # Sets to 0 speed to await next step
     robot.value = (0,0)
 
-print('Starting program...')
-sleep(1)
+print('Tuning phase: enter l or r to turn the robot once to the left or right, or e to exit.')
+while 1:
+    user_in = input('Input: ')
+    if user_in == 'l':
+        sleep(0.5)
+        turn(bot, 'left', enc1, enc2)
+    elif user_in == 'r':
+        sleep(0.5)
+        turn(bot, 'right', enc1, enc2)
+    elif user_in == 'e':
+        break;
 
-for i in range(1, 9):
-    turn(bot, 'right', enc1, enc2)
-    print(f'right turn no. {i}')
+user_next = input('Would you like to run the full test? y/n')
+if user_next == 'y':
+    print('Starting program...')
     sleep(1)
 
-for i in range(1, 9):
-    turn(bot, 'left', enc1, enc2)
-    print(f'left turn no. {i}')
-    sleep(1)
+    for i in range(1, 9):
+        turn(bot, 'right', enc1, enc2)
+        print(f'right turn no. {i}')
+        sleep(1)
+
+    for i in range(1, 9):
+        turn(bot, 'left', enc1, enc2)
+        print(f'left turn no. {i}')
+        sleep(1)
+        
