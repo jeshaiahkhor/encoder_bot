@@ -3,6 +3,7 @@
 ### Importing libraries
 from gpiozero import Motor, Robot, DigitalInputDevice
 from time import sleep
+import time
 
 ### Defining constants
 # Pins
@@ -18,16 +19,11 @@ enc_a = 26
 enc_b = 16
 
 # Constants
-original_speed = 0.75
+ori_spd_a = 0.75
+ori_spd_b = 0.75
 target = 40     # Target no. of ticks per fs duration
 
-kp = 0.005
-kd = 0.001
-ki = 0
-
-allowance = 2
-
-fs = 0.5
+fs = 0.1
 
 # Defining the Encoder object
 class Encoder(object):
@@ -46,10 +42,76 @@ class Encoder(object):
     def value(self):
         return self._value
 
-# Defining the turning function
-def turn(robot, direction, left_encoder, right_encoder, default_speed=0.75):
+### Creating the Robot and Encoder objects
+# Robot object
+bot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
+
+
+# Encoder objects
+enc1 = Encoder(enc_a)
+enc2 = Encoder(enc_b)
+
+
+def straight(robot, left_encoder, right_encoder, speed=0.5, runtime=1, kp=0.01, kd=0.005, ki=0, allowance=2, fs=0.1):
+    # Setting initial counter values    
+    count = 0
+    prev_err = 0
+    sum_err = 0
+
+    # Starting the motors running (at default speeds)
+    left_speed = speed
+    right_speed = speed
+    robot.value = (left_speed, right_speed)
+
+    # Running for set amount of time
+    t_end = time.time() + runtime
+    while time.time() < t_end:
+        # Calculating motor error - motor 1 is the reference, motor 2 will (try) to match it
+        err = left_encoder._value - right_encoder._value
+        #print(f'error: {err}')
+
+        # Adding an allowance for error
+        if abs(err) > allowance:
+            # Finding the new motor speed (adjustment = error x kp, new_speed = old_speed + adjustment)
+            p_comp = err*kp
+            d_comp = prev_err*kd
+            i_comp = sum_err*ki
+            adj = p_comp + d_comp + i_comp
+            right_speed += adj
+            
+            #print("p {} d {} i {} total {}".format(p_comp, d_comp, i_comp, adj))
+
+            # Setting min and max values to 0 and 1 in case that is exceeded
+            right_speed = max(min(1, right_speed), 0)
+
+            # Updating robot speed
+            bot.value = (left_speed, right_speed)
+
+            # Printing output of motor speeds
+            # print("enc1 {} enc2 {} m1 {} m2 {}".format(left_encoder._value, right_encoder._value, left_speed, right_speed))
+            sleep(fs)
+
+            count += 1
+            prev_err = err
+            sum_err += err
+        elif abs(prev_err) > allowance and abs(err) < allowance:
+            bot.value = (speed, speed)
+            #print(f'HARD FIX - speeds adjusted; prev err: {prev_err}, err: {err}')
+            prev_err = err
+
+    # Stop motors
+    bot.value = (0,0)
+    sleep(0.5)
+    
+    # Resetting encoder counts for next action
+    left_encoder.reset()
+    right_encoder.reset()
+
+
+# Defining turning function
+def turn(robot, direction, left_encoder, right_encoder, default_speed=0.5):
     # Setting no. of encoder ticks required (trial & error)
-    turn_limit = 28
+    turn_limit = 29
     
     # Resets the current count of both encoders
     left_encoder.reset()
@@ -67,7 +129,7 @@ def turn(robot, direction, left_encoder, right_encoder, default_speed=0.75):
 
         # Allowing to run while turn angle not reached
         while left_encoder._value - right_encoder._value < turn_limit:
-            #print(f'enc1: {enc1._value}, enc2: {enc2._value}\n')
+            # print(f'enc1: {enc1._value}, enc2: {enc2._value}\n')
             sleep(0.01)
     elif direction == 'left':
         # Sets the left motor speed to 0 (allows left turn)
@@ -80,59 +142,32 @@ def turn(robot, direction, left_encoder, right_encoder, default_speed=0.75):
 
     # Sets to 0 speed to await next step
     robot.value = (0,0)
+    sleep(0.5)
 
-def straight(robot, left_encoder, right_encoder, speed=0.75, time):
-    # Defining parameters
-    kp = 
+    # Resetting encoder counts for next action
+    left_encoder.reset()
+    right_encoder.reset()
 
-### Creating the Robot and Encoder objects
-# Robot object
-bot = Robot(left=Motor(forward=in1, backward=in2, enable=ena), right=Motor(forward=in3, backward=in4, enable=enb))
-bot.value = (ori_spd_a, ori_spd_b)  # Setting motor speeds
+# Starting main program\
+input()
+print('Testing straight line function...')
+sleep(1)
 
-spd_a = ori_spd_a
-spd_b = ori_spd_b
+print('Starting')
+straight(bot, enc1, enc2, runtime=2)
 
-# Encoder objects
-enc1 = Encoder(enc_a)
-enc2 = Encoder(enc_b)
+print('Turning right')
+turn(bot, 'right', enc1, enc2)
 
-# Forever looping 
-count = 0
+print('Going straight')
+straight(bot, enc1, enc2)
 
-prev_err = 0
-sum_err = 0
+print('Turning right')
+turn(bot, 'right', enc1, enc2)
 
-while 1:
-    # Calculating motor error - motor 1 is the reference, motor 2 will (try) to match it
-    err = enc1._value - enc2._value
-    print(f'error: {err}')
+print('Going straight')
+straight(bot, enc1, enc2, runtime=2)
 
-    # Adding an allowance for error?
-    if abs(err) > allowance:
-        # Finding the new motor speed (adjustment = error x kp, new_speed = old_speed + adjustment)
-        p_comp = err*kp
-        d_comp = prev_err*kd
-        i_comp = sum_err*ki
-        adj = p_comp + d_comp + i_comp
-        spd_b += adj
-        
-        print("p {} d {} i {} total {}".format(p_comp, d_comp, i_comp, adj))
+print('Turning left')
+turn(bot, 'left', enc1, enc2)
 
-        # Setting min and max values to 0 and 1 in case that is exceeded
-        spd_b = max(min(1, spd_b), 0)
-
-        # Updating robot speed
-        bot.value = (spd_a, spd_b)
-
-        # Printing output of motor speeds
-        print("enc1 {} enc2 {} m1 {} m2 {}".format(enc1._value, enc2._value, spd_a, spd_b))
-        sleep(fs)
-
-        count += 1
-        prev_err = err
-        sum_err += err
-    elif abs(prev_err) > allowance and abs(err) < allowance:
-        bot.value = (ori_spd_a, ori_spd_b)
-        print(f'HARD FIX - speeds adjusted; prev err: {prev_err}, err: {err}')
-        prev_err = err
